@@ -1,38 +1,48 @@
-# HImagePickerUtils-Swift
+#Swift-照片选取和拍照
 
-![image](https://github.com/iFallen/HImagePickerUtils-Swift/raw/master/ScreenShots/screenShot1.png)
+### Tips
 
-使用：
+---
 
-weak var weakSelf = self
+- 支持照片选取和拍照
+- 支持Block回调
 
-imagePicker = HImagePickerUtils()// HImagePickerUtils 对象必须为全局变量，不然UIImagePickerController代理方法不会执行
+### 使用方法  
+---
+- 定义全局常量
+	
+	```
+	let imagePicker: HImagePickerUtils!
+	//不能为临时变量，临时变量销毁时，UIImagePickerController代理方法不会回调
+	```
+- 对象初始化
 
-imagePicker.pickPhotoEnd = {a,b,c in
+	```
+	imagePicker = HImagePickerUtils()
+	```
+- 设置闭包回调
+	
+	```
+	imagePicker.pickPhotoEnd = {(a:UIImage?,b:HTakeStatus,c:String?) -> Void in
+            if b == HTakeStatus.Success {
+                self.image.image = a
+            }else{
+				print(c)
+            }
+        }
+	```
+- 拍一张
 
-    if b == HTakeStatus.Success {
-    
-        imageView.image = a
-        
-    }else{
-    
-        let alert = UIAlertController(title: "Info", message: c, preferredStyle: UIAlertControllerStyle.Alert)
-        
-        let action = UIAlertAction(title: "好的", style: UIAlertActionStyle.Default, handler: nil)
-        
-        alert.addAction(action)
-        
-        weakSelf?.presentViewController(alert, animated: true, completion: nil)
-        
-    }
-    
-}
+	```
+	imagePicker.takePhoto(self)//self is UIViewController
+	```
+- 从相册取
 
+	```
+	imagePicker.choosePhoto(self)
+	```
 
-从相册取:
-
-imagePicker.choosePhoto(self)
-
-拍一张:
-
-imagePicker.takePhoto(self)
+### 效果图
+---
+<br />
+![](https://github.com/iFallen/HImagePickerUtils-Swift/raw/master/ScreenShots/screenShot1.png "效果图")
