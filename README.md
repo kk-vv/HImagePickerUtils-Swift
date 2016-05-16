@@ -44,5 +44,5 @@
 
 ### 效果图
 ---
-<br />
-![](https://github.com/iFallen/HImagePickerUtils-Swift/raw/master/ScreenShots/screenShot1.png "效果图")
+>
+![](https://github.com/iFallen/HImagePickerUtils-Swift/raw/master/ScreenShots/screenShot.png)
