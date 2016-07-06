@@ -23,11 +23,11 @@
 - 设置闭包回调
 	
 	```
-	imagePicker.pickPhotoEnd = {(a:UIImage?,b:HTakeStatus,c:String?) -> Void in
-            if b == HTakeStatus.Success {
-                self.image.image = a
+	imagePicker.pickPhotoEnd = {(image:UIImage?,status:HTakeStatus,errorMsg:String?) -> Void in
+            if status == HTakeStatus.Success {
+                self.image.image = image
             }else{
-				print(c)
+				print(errorMsg)
             }
         }
 	```

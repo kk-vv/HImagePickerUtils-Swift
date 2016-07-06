@@ -22,11 +22,11 @@ class ViewController: UIViewController {
         
         weak var weakSelf = self
         imagePicker = HImagePickerUtils()// HImagePickerUtils 对象必须为全局变量，不然UIImagePickerController代理方法不会执行
-        imagePicker.pickPhotoEnd = {a,b,c in
-            if b == HTakeStatus.Success {
-                self.image.image = a
+        imagePicker.pickPhotoEnd = {image,status,errorMsg in
+            if status == HTakeStatus.Success {
+                self.image.image = image
             }else{
-                let alert = UIAlertController(title: "Info", message: c, preferredStyle: UIAlertControllerStyle.Alert)
+                let alert = UIAlertController(title: "Info", message: errorMsg, preferredStyle: UIAlertControllerStyle.Alert)
                 let action = UIAlertAction(title: "好的", style: UIAlertActionStyle.Default, handler: nil)
                 alert.addAction(action)
                 weakSelf?.presentViewController(alert, animated: true, completion: nil)
@@ -40,7 +40,7 @@ class ViewController: UIViewController {
         btnPickPhoto.backgroundColor = UIColor.purpleColor()
         btnPickPhoto.layer.cornerRadius = 5.0
         btnPickPhoto.setTitle("从相册中选", forState: UIControlState.Normal)
-        btnPickPhoto.addTarget(self, action: "buttonAction:", forControlEvents: .TouchUpInside)
+        btnPickPhoto.addTarget(self, action: #selector(ViewController.buttonAction(_:)), forControlEvents: .TouchUpInside)
         btnPickPhoto.center = CGPointMake(center.x, center.y - 20)
         btnPickPhoto.tag = 110
         self.view .addSubview(btnPickPhoto)
@@ -51,7 +51,7 @@ class ViewController: UIViewController {
         btnTakePhoto.backgroundColor = UIColor.purpleColor()
         btnTakePhoto.layer.cornerRadius = 5.0
         btnTakePhoto.setTitle("拍一张", forState: UIControlState.Normal)
-        btnTakePhoto.addTarget(self, action: "buttonAction:", forControlEvents: .TouchUpInside)
+        btnTakePhoto.addTarget(self, action: #selector(ViewController.buttonAction(_:)), forControlEvents: .TouchUpInside)
         btnTakePhoto.center = CGPointMake(center.x, center.y + 20)
         btnTakePhoto.tag = 112
         self.view .addSubview(btnTakePhoto)
