@@ -9,7 +9,7 @@
 
 ### 使用方法  
 ---
-- 定义全局常量
+- 定义为类的成员变量
 	
 	```
 	let imagePicker: HImagePickerUtils!
