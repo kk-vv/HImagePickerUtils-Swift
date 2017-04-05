@@ -21,7 +21,7 @@ enum HPhotoType{
 
 typealias takeEndAction = (UIImage?,HTakeStatus,String?) -> Void
 
-/// HImagePickerUtils 对象必须为全局变量，不然UIImagePickerController代理方法不会执行
+/// HImagePickerUtils
 class HImagePickerUtils: NSObject,UIImagePickerControllerDelegate,UINavigationControllerDelegate {
     
     var pickPhotoEnd: takeEndAction?
@@ -43,8 +43,8 @@ class HImagePickerUtils: NSObject,UIImagePickerControllerDelegate,UINavigationCo
             if !self.isAuthorized(){
                 if sysVersion >= 8.0 {
                     let alertVC = UIAlertController(title: nil, message: "您阻止了相机访问权限", preferredStyle: UIAlertControllerStyle.alert)
-                    let openIt = UIAlertAction(title: "马上打开", style: UIAlertActionStyle.default, handler: { (alert:UIAlertAction) -> Void in
-                        UIApplication.shared.openURL(NSURL(string: UIApplicationOpenSettingsURLString)! as URL)
+                    let openIt = UIAlertAction(title: "马上打开", style: UIAlertActionStyle.default, handler: { (alert:UIAlertAction) -> Void in                        
+                        UIApplication.shared.open(URL(string: UIApplicationOpenSettingsURLString)!, options: [:], completionHandler: nil)
                     })
                     alertVC.addAction(openIt)
                     rootVC.present(alertVC, animated: true, completion: nil)
@@ -147,10 +147,6 @@ class HImagePickerUtils: NSObject,UIImagePickerControllerDelegate,UINavigationCo
             return false
         }
         let availableMediaTypes = NSArray(array: UIImagePickerController.availableMediaTypes(for: sourceType)!)
-        
-//        availableMediaTypes.enumerateObjects { (a, b, c) in a as! NSString
-//            
-//        }
         availableMediaTypes.enumerateObjects({ (obj : Any, idx: Int, stop:UnsafeMutablePointer<ObjCBool>) in
             let type = obj as! NSString
             if type.isEqual(to: paramMediaType as String) {
@@ -160,14 +156,6 @@ class HImagePickerUtils: NSObject,UIImagePickerControllerDelegate,UINavigationCo
 
             
         })
-        
-//        availableMediaTypes.enumerateObjectsUsingBlock { (obj:AnyObject, idx:NSInteger, stop:UnsafeMutablePointer<ObjCBool>) -> Void in
-//            let type = obj as! NSString
-//            if type.isEqualToString(paramMediaType as String) {
-//                result = true
-//                stop.memory = true
-//            }
-//        }
         return result
     }
     

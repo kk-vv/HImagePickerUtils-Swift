@@ -11,6 +11,7 @@ import UIKit
 class ViewController: UIViewController {
     
     var image:UIImageView!
+    /// HImagePickerUtils 对象不能为临时变量，不然UIImagePickerController代理方法不会执行
     var imagePicker: HImagePickerUtils!
     
     override func viewDidLoad() {
