@@ -54,4 +54,4 @@ imagePicker.choosePhoto(presentFrom: self, completion: { [unowned self] (image, 
 ---
 
 >
-![](https://github.com/iFallen/HImagePickerUtils-OC/raw/master/ScreenShot/1.png)
+![](https://github.com/iFallen/HImagePickerUtils-Swift/raw/master/ScreenShot/1.png)
