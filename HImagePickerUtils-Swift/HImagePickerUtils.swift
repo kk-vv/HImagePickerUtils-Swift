@@ -10,78 +10,108 @@ import UIKit
 import AVFoundation
 import AssetsLibrary
 import MobileCoreServices
+import Photos
 
-enum HTakeStatus{
-    case Success, Canceled, CameraDisable, PhotoLibDisable, NotImage
+enum HStatus{
+    case success, canceled, cameraDisable, photoLibDisable, notImage
+    case notDetermined
+    case restricted
+    case denied
+    case authorized
+    
+    func description() -> String {
+        switch self {
+            case .success:
+                return "成功"
+            case .canceled:
+                return "取消选择"
+            case .cameraDisable:
+                return "该设备不支持拍照"
+            case .photoLibDisable:
+                return "该设备不支持资源选择"
+            case .notImage:
+                return "获取的不是图片"
+            case .notDetermined:
+                return "未作出授权选择"
+            case .restricted:
+                return "该功能被禁用"
+            case .denied:
+                return "未获取授权"
+            case .authorized:
+                return "已授权"
+        }
+    }
 }
 
-enum HPhotoType{
-    case TakePhoto, ChoosePhoto
+enum HChooseType{
+    case takePhoto, choosePhoto
+    func description() -> String {
+        switch self {
+            case .takePhoto:
+                return "相机"
+            case .choosePhoto:
+                return "相册"
+        }
+    }
 }
 
-typealias takeEndAction = (UIImage?,HTakeStatus,String?) -> Void
+typealias HCompletion = (UIImage?,HStatus) -> Void
 
 /// HImagePickerUtils
 class HImagePickerUtils: NSObject,UIImagePickerControllerDelegate,UINavigationControllerDelegate {
     
-    var pickPhotoEnd: takeEndAction?
+    private var pickPhotoEnd: HCompletion?
     
-    func takePhoto(rootVC:UIViewController) {
-        if self.isCameraAvailable() && self.doesCameraSupportTakingPhotos(){
-            let controller = UIImagePickerController()
-            controller.view.backgroundColor = UIColor.white
-            controller.sourceType = UIImagePickerControllerSourceType.camera
-            controller.mediaTypes = [kUTTypeImage as String]
-            controller.allowsEditing = true
-            controller.delegate = self
-            
-            let sysVersion = (UIDevice.current.systemVersion as NSString).floatValue
-            if sysVersion >= 8.0{
-                controller.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
-            }
-            
-            if !self.isAuthorized(){
-                if sysVersion >= 8.0 {
-                    let alertVC = UIAlertController(title: nil, message: "您阻止了相机访问权限", preferredStyle: UIAlertControllerStyle.alert)
-                    let openIt = UIAlertAction(title: "马上打开", style: UIAlertActionStyle.default, handler: { (alert:UIAlertAction) -> Void in                        
-                        UIApplication.shared.open(URL(string: UIApplicationOpenSettingsURLString)!, options: [:], completionHandler: nil)
-                    })
-                    alertVC.addAction(openIt)
-                    rootVC.present(alertVC, animated: true, completion: nil)
-                }else{
-                    let alertVC = UIAlertController(title: "提示", message: "请在 '系统设置|隐私|相机' 中开启相机访问权限", preferredStyle: UIAlertControllerStyle.alert)
-                    rootVC.present(alertVC, animated: true, completion: nil)
+    func takePhoto(presentFrom rootVC:UIViewController,completion:HCompletion?) {
+        self.pickPhotoEnd = completion
+        if HImagePickerUtils.isCameraAvailable() && HImagePickerUtils.doesCameraSupportTakingPhotos(){
+            HImagePickerUtils.cameraAuthorized { (authorized, status) in
+                if authorized || status == .notDetermined {
+                    let controller = UIImagePickerController()
+                    controller.view.backgroundColor = UIColor.white
+                    controller.sourceType = UIImagePickerControllerSourceType.camera
+                    controller.mediaTypes = [kUTTypeImage as String]
+                    controller.allowsEditing = true
+                    controller.delegate = self
+                    
+                    if #available(iOS 8.0, *) {
+                        controller.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
+                    }
+                    rootVC.present(controller, animated: true, completion: nil)
+                }else {
+                    self.pickPhotoEnd?(nil,status)
                 }
-            }else{
-                rootVC.present(controller, animated: true, completion: nil)
             }
         }else{
-            if (self.pickPhotoEnd != nil){
-                self.pickPhotoEnd?(nil,HTakeStatus.CameraDisable,"该设备不支持拍照")
-            }
+            self.pickPhotoEnd?(nil,HStatus.cameraDisable)
         }
     }
     
-    func choosePhoto(rootVC:UIViewController){
-        if self.isPhotoLibraryAvailable(){
-            let controller = UIImagePickerController()
-            controller.view.backgroundColor = UIColor.white
-            controller.sourceType = UIImagePickerControllerSourceType.photoLibrary
-            var mediaTypes = [String]()
-            if self.canUserPickPhotosFromPhotoLibrary(){
-                mediaTypes.append(kUTTypeImage as String)
-            }
-            controller.allowsEditing = true
-            controller.mediaTypes = mediaTypes
-            if (UIDevice.current.systemVersion as NSString).floatValue >= 8.0{
-                controller.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
-            }
-            controller.delegate = self
-            rootVC.present(controller, animated: true, completion: nil)
+    func choosePhoto(presentFrom rootVC:UIViewController,completion:HCompletion?){
+        self.pickPhotoEnd = completion
+        if HImagePickerUtils.isPhotoLibraryAvailable(){
+            HImagePickerUtils.photoAuthorized({ (authorized, status) in
+                if authorized || status == .notDetermined {
+                    let controller = UIImagePickerController()
+                    controller.view.backgroundColor = UIColor.white
+                    controller.sourceType = UIImagePickerControllerSourceType.photoLibrary
+                    var mediaTypes = [String]()
+                    if HImagePickerUtils.canUserPickPhotosFromPhotoLibrary(){
+                        mediaTypes.append(kUTTypeImage as String)
+                    }
+                    controller.allowsEditing = true
+                    controller.mediaTypes = mediaTypes
+                    if #available(iOS 8.0, *) {
+                        controller.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
+                    }
+                    controller.delegate = self
+                    rootVC.present(controller, animated: true, completion: nil)
+                }else {
+                    self.pickPhotoEnd?(nil,status)
+                }
+            })
         }else{
-            if self.pickPhotoEnd != nil{
-                self.pickPhotoEnd?(nil,HTakeStatus.PhotoLibDisable,"该设备不支持资源选择")
-            }
+            self.pickPhotoEnd?(nil,HStatus.photoLibDisable)
         }
     }
     
@@ -95,53 +125,65 @@ class HImagePickerUtils: NSObject,UIImagePickerControllerDelegate,UINavigationCo
             }else{
                 theImage = info[UIImagePickerControllerOriginalImage] as! UIImage
             }
-            if self.pickPhotoEnd != nil {
-                self.pickPhotoEnd?(theImage,HTakeStatus.Success,nil)
-            }
+            self.pickPhotoEnd?(theImage,HStatus.success)
         }else{
-            if self.pickPhotoEnd != nil {
-                self.pickPhotoEnd?(nil,HTakeStatus.NotImage,"获取的不是图片")
-            }
+            self.pickPhotoEnd?(nil,HStatus.notImage)
         }
         picker.dismiss(animated: true, completion: nil)
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true) { 
-            if self.pickPhotoEnd != nil {
-                self.pickPhotoEnd?(nil,HTakeStatus.Canceled,"取消选择")
-            }
+            self.pickPhotoEnd?(nil,HStatus.canceled)
         }
     }
     
     //MARK: 用户是否授权
-    func isAuthorized() -> Bool{
-        let mediaType = AVMediaTypeVideo
-        let authStatus = AVCaptureDevice.authorizationStatus(forMediaType: mediaType)
-        if authStatus == AVAuthorizationStatus.restricted ||
-            authStatus == AVAuthorizationStatus.denied{
-                return false
+    static func cameraAuthorized(_ completion:((Bool,HStatus) -> Void)?){
+        let status = AVCaptureDevice.authorizationStatus(forMediaType: AVMediaTypeVideo)
+        switch status {
+            case .authorized:
+                completion?(true,.authorized)
+            case .notDetermined:
+                completion?(false,.notDetermined)
+            case .restricted:
+                completion?(false,.restricted)
+            case .denied:
+                completion?(false,.denied)
         }
-        return true
+    }
+    
+    static func photoAuthorized(_ completion:((Bool,HStatus) -> Void)?){
+        let status = PHPhotoLibrary.authorizationStatus()
+        switch status {
+            case .authorized:
+                completion?(true,.authorized)
+            case .notDetermined:
+                completion?(false,.notDetermined)
+            case .restricted:
+                completion?(false,.restricted)
+            case .denied:
+                completion?(false,.denied)
+        }
     }
     
     //MARK: 相机功能是否可用
-    func isCameraAvailable() -> Bool{
+    static func isCameraAvailable() -> Bool{
         return UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceType.camera)
     }
     
     //MARK: 前置摄像头是否可用
-    func isFrontCameraAvailable() -> Bool{
+    static func isFrontCameraAvailable() -> Bool{
         return UIImagePickerController.isCameraDeviceAvailable(UIImagePickerControllerCameraDevice.front)
     }
     
     //MARK: 后置摄像头是否可用
-    func isRearCameraAvailable() -> Bool{
+    static func isRearCameraAvailable() -> Bool{
         return UIImagePickerController.isCameraDeviceAvailable(UIImagePickerControllerCameraDevice.rear)
     }
     
     //MARK: 判断是否支持某种多媒体类型：拍照，视频
-    func cameraSupportsMedia(paramMediaType:NSString, sourceType:UIImagePickerControllerSourceType) -> Bool {
+    static func cameraSupportsMedia(paramMediaType:NSString, sourceType:UIImagePickerControllerSourceType) -> Bool {
         var result = false
         if paramMediaType.length == 0 {
             return false
@@ -160,26 +202,48 @@ class HImagePickerUtils: NSObject,UIImagePickerControllerDelegate,UINavigationCo
     }
     
     //MARK: 检查摄像头是否支持录像
-    func doesCameraSupportShootingVides() -> Bool{
+    static func doesCameraSupportShootingVides() -> Bool{
         return self.cameraSupportsMedia(paramMediaType: kUTTypeMovie, sourceType: UIImagePickerControllerSourceType.camera)
     }
     //MARK: 检查摄像头是否支持拍照
-    func doesCameraSupportTakingPhotos() -> Bool{
+    static func doesCameraSupportTakingPhotos() -> Bool{
         return self.cameraSupportsMedia(paramMediaType: kUTTypeImage, sourceType: UIImagePickerControllerSourceType.camera)
     }
     
     //MARK: 相册是否可用
-    func isPhotoLibraryAvailable() -> Bool {
+    static func isPhotoLibraryAvailable() -> Bool {
         return UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceType.photoLibrary)
     }
     
     //MARK: 是否可在相册中选择视频
-    func canUserPickVideosFromPhotoLibrary() -> Bool {
+    static func canUserPickVideosFromPhotoLibrary() -> Bool {
         return self.cameraSupportsMedia(paramMediaType: kUTTypeMovie, sourceType: UIImagePickerControllerSourceType.photoLibrary)
     }
     
     //MARK: 是否可在相册中选择图片
-    func canUserPickPhotosFromPhotoLibrary() -> Bool {
+    static func canUserPickPhotosFromPhotoLibrary() -> Bool {
         return self.cameraSupportsMedia(paramMediaType: kUTTypeImage, sourceType: UIImagePickerControllerSourceType.photoLibrary)
+    }
+    
+    static func showTips(at rootVC:UIViewController!,type:HChooseType) {
+        if #available(iOS 8.0, *) {
+            let alertVC = UIAlertController(title: nil, message: "您阻止了\(type.description())访问权限", preferredStyle: UIAlertControllerStyle.alert)
+            let openIt = UIAlertAction(title: "马上打开", style: UIAlertActionStyle.default, handler: { (alert:UIAlertAction) -> Void in
+                if let url = URL(string: UIApplicationOpenSettingsURLString){
+                    if #available(iOS 10.0, *) {
+                        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                    } else {
+                        // Fallback on earlier versions
+                        UIApplication.shared.openURL(url)
+                    }
+                }
+                
+            })
+            alertVC.addAction(openIt)
+            rootVC.present(alertVC, animated: true, completion: nil)
+        }else{
+            let alertVC = UIAlertController(title: "提示", message: "请在 '系统设置|隐私|\(type.description())' 中开启相机访问权限", preferredStyle: UIAlertControllerStyle.alert)
+            rootVC.present(alertVC, animated: true, completion: nil)
+        }
     }
 }

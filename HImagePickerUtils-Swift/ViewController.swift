@@ -12,35 +12,20 @@ class ViewController: UIViewController {
     
     var image:UIImageView!
     /// HImagePickerUtils 对象不能为临时变量，不然UIImagePickerController代理方法不会执行
-    var imagePicker: HImagePickerUtils!
+    lazy var imagePicker = HImagePickerUtils()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        self.view.backgroundColor = #colorLiteral(red: 0.1019607857, green: 0.2784313858, blue: 0.400000006, alpha: 1)
         image = UIImageView(frame: self.view.frame)
         image.contentMode = .scaleAspectFit
         self.view.addSubview(image)
-        
-        weak var weakSelf = self
-        imagePicker = HImagePickerUtils()
-        
-        imagePicker.pickPhotoEnd = {image,status,errorMsg in
-            if status == HTakeStatus.Success {
-                self.image.image = image
-            }else{
-                let alert = UIAlertController(title: "Info", message: errorMsg, preferredStyle: UIAlertControllerStyle.alert)
-                let action = UIAlertAction(title: "好的", style: UIAlertActionStyle.default, handler: nil)
-                alert.addAction(action)
-                weakSelf?.present(alert, animated: true, completion: nil)
-            }
-        }
         
         let center = self.view.center
         
         let btnPickPhoto = UIButton(type: UIButtonType.custom)
         btnPickPhoto.frame = CGRect(x: 0, y: 0, width: 120, height: 30)
-        btnPickPhoto.backgroundColor = UIColor.purple
-        btnPickPhoto.layer.cornerRadius = 5.0
         btnPickPhoto.setTitle("从相册中选", for: UIControlState.normal)
         btnPickPhoto.addTarget(self, action: #selector(ViewController.buttonAction(button:)), for: .touchUpInside)
         btnPickPhoto.center = CGPoint(x: center.x, y: center.y - 20)
@@ -50,8 +35,6 @@ class ViewController: UIViewController {
         
         let btnTakePhoto = UIButton(type: UIButtonType.custom)
         btnTakePhoto.frame = CGRect(x: 0, y: 0, width: 120, height: 30)
-        btnTakePhoto.backgroundColor = UIColor.purple
-        btnTakePhoto.layer.cornerRadius = 5.0
         btnTakePhoto.setTitle("拍一张", for: UIControlState.normal)
         btnTakePhoto.addTarget(self, action: #selector(ViewController.buttonAction(button:)), for: .touchUpInside)
         btnTakePhoto.center = CGPoint(x: center.x, y: center.y + 20)
@@ -61,12 +44,39 @@ class ViewController: UIViewController {
     
     func buttonAction(button:UIButton!){
         switch button.tag{
-        case 110:
-            imagePicker.choosePhoto(rootVC: self)
-        case 112:
-            imagePicker.takePhoto(rootVC: self)
-        default:
-            break
+            case 110:
+                imagePicker.choosePhoto(presentFrom: self, completion: { [unowned self] (image, status) in
+                    if status == .success {
+                        self.image.image = image
+                    }else{
+                        if status == .denied{
+                            HImagePickerUtils.showTips(at: self,type: .choosePhoto)
+                        }else{
+                            let alert = UIAlertController(title: "提示", message: status.description(), preferredStyle: UIAlertControllerStyle.alert)
+                            let action = UIAlertAction(title: "好的", style: UIAlertActionStyle.default, handler: nil)
+                            alert.addAction(action)
+                            self.present(alert, animated: true, completion: nil)
+                        }
+                        
+                    }
+                })
+            case 112:
+                imagePicker.takePhoto(presentFrom: self, completion: { [unowned self] (image, status) in
+                    if status == .success {
+                        self.image.image = image
+                    }else{
+                        if status == .denied{
+                            HImagePickerUtils.showTips(at: self,type: .takePhoto)
+                        }else{
+                            let alert = UIAlertController(title: "提示", message: status.description(), preferredStyle: UIAlertControllerStyle.alert)
+                            let action = UIAlertAction(title: "好的", style: UIAlertActionStyle.default, handler: nil)
+                            alert.addAction(action)
+                            self.present(alert, animated: true, completion: nil)
+                        }
+                    }
+                })
+            default:
+                break
         }
     }
     
