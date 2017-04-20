@@ -36,7 +36,7 @@ enum HStatus{
             case .restricted:
                 return "该功能被禁用"
             case .denied:
-                return "未获取授权"
+                return "阻止了相册/相机访问权限"
             case .authorized:
                 return "已授权"
         }

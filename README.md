@@ -7,6 +7,13 @@
 - 支持照片选取和拍照
 - 支持Closure回调
 
+`注意Info.plist设置`
+
+```
+Privacy - Camera Usage Description
+Privacy - Photo Library Usage Description
+```
+
 ### 使用方法  
 ---
 
