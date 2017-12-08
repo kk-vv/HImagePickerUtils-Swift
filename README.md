@@ -57,14 +57,6 @@ imagePicker.choosePhoto(presentFrom: self, completion: { [unowned self] (image, 
 })
 ```
 
-### Installation
-
-HImagePickerUtils is available through [CocoaPods](http://cocoapods.org). To install
-it, simply add the following line to your Podfile:
-
-```ruby
-pod "HImagePickerUtils"
-```
 
 ### 效果图
 ---
